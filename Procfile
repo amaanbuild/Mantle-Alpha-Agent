@@ -1,4 +1,4 @@
-# Process definitions for PaaS hosts (Railway / Render / Heroku).
+# Process definitions for PaaS hosts (Render / Heroku and similar).
 # Each line is a separately-scalable process; map them to services in your host.
 #
 #   bot     - Telegram bot (polling) - the always-on inbound handler

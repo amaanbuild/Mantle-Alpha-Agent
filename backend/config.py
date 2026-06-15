@@ -116,7 +116,7 @@ class Settings(BaseSettings):
     @field_validator("DATABASE_URL")
     @classmethod
     def _normalize_db_url(cls, v: str) -> str:
-        # Managed hosts (Railway, Render, Heroku, Supabase...) inject a
+        # Managed hosts (Render, Heroku, Supabase...) inject a
         # ``postgres://`` or ``postgresql://`` URL, but SQLAlchemy's async engine
         # needs the asyncpg driver. Normalize so a platform-provided DATABASE_URL
         # works out of the box with no manual editing.
