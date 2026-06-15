@@ -15,6 +15,9 @@
 [![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4?style=flat-square&logo=telegram&logoColor=white)](https://core.telegram.org/bots)
 [![Tests](https://img.shields.io/badge/tests-70%20passing-success?style=flat-square)](#testing)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](#license)
+[![Live](https://img.shields.io/website?url=https%3A%2F%2Fmantle-alpha-agent.onrender.com%2Fhealth&label=live%20demo&style=flat-square)](https://mantle-alpha-agent.onrender.com/docs)
+
+**[Live API and Docs](https://mantle-alpha-agent.onrender.com/docs)** | **[Telegram bot: @MantleAlphaBot](https://t.me/MantleAlphaBot)**
 
 </div>
 
@@ -39,6 +42,17 @@ AI Insight: A wallet accumulated $120k of mETH, about 4.2x the 24h average,
    which may indicate accumulation.
 Tx: https://explorer.mantle.xyz/tx/0x...
 ```
+
+## Live Demo
+
+The agent is deployed and running 24/7. Try it right now:
+
+- **Telegram bot**: [@MantleAlphaBot](https://t.me/MantleAlphaBot) - send `/start`, then `Track mETH whale trades above $10,000`
+- **REST API and OpenAPI docs**: https://mantle-alpha-agent.onrender.com/docs
+- **Health check**: https://mantle-alpha-agent.onrender.com/health
+
+> Hosted free on Render. The REST API, Telegram bot, and Mantle monitor all run
+> in a single process ([backend/run_all.py](backend/run_all.py)).
 
 ## Table of Contents
 
