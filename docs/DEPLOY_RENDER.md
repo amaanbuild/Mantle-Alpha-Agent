@@ -1,10 +1,11 @@
 # Deploy free on Render (no credit card)
 
 Render's free tier gives one always-available web service (750 hours/month, which
-covers a single service running full time) plus a free PostgreSQL database, with
-no credit card required. This app ships an all-in-one entrypoint
-(`backend/run_all.py`) that runs the REST API, the Telegram bot, and the Mantle
-monitor in a single process, so the whole system fits one free web service.
+covers a single service running full time), with no credit card required. This
+app ships an all-in-one entrypoint (`backend/run_all.py`) that runs the REST API,
+the Telegram bot, and the Mantle monitor in a single process, using a
+self-contained SQLite database. The whole system fits one free web service, with
+nothing else to provision.
 
 > One caveat: free web services sleep after about 15 minutes with no inbound
 > traffic. We keep it awake with a free uptime pinger (step 4). With that in
@@ -22,8 +23,8 @@ on GitHub. This repo already has them.
 1. Go to https://render.com and sign in with GitHub (no card needed).
 2. Click New, then Blueprint.
 3. Connect this repository. Render reads `render.yaml` and shows one web service
-   (`mantle-alpha-agent`) plus a free PostgreSQL database (`mantle-db`).
-4. Click Apply. Render builds the service and provisions the database.
+   (`mantle-alpha-agent`).
+4. Click Apply (or Deploy Blueprint). Render builds the service.
 
 ## 3. Add your bot token
 
@@ -67,26 +68,20 @@ That steady traffic keeps the instance warm 24/7, so whale alerts keep flowing.
 
 ## Notes and tips
 
-- The free PostgreSQL instance is time-limited (Render deletes free databases
-  after about 30 days). That is fine for a hackathon. To reset, re-apply the
-  blueprint.
+- Data lives in a SQLite file on the instance. The free disk is ephemeral, so
+  data resets on each redeploy. That is fine for a live demo.
 - Only one instance may poll Telegram at a time. Keep this as a single free
   service (do not scale it to multiple instances).
 - Redeploy by pushing to GitHub. Render rebuilds automatically.
 - Rotate your bot token (@BotFather, then `/revoke`) if it was ever shared
   publicly, then update `TELEGRAM_BOT_TOKEN` in the Render dashboard.
 
-## Even simpler: SQLite (skip the database)
+## Want persistence? Add managed Postgres
 
-If you do not want the managed database at all, remove the `databases:` block and
-the `DATABASE_URL` env var from `render.yaml` and instead set:
-
-```
-DATABASE_URL = sqlite+aiosqlite:///./dev.db
-```
-
-The app then stores data in a local file. Note the free instance has an ephemeral
-disk, so history resets on each redeploy. For a live demo that is usually fine.
+To keep data across redeploys, create a managed PostgreSQL database in Render and
+set the service's `DATABASE_URL` to its connection string (the app auto-converts
+the `postgres://` URL to the async driver). Free Render databases are time-limited
+and only one is allowed per account, so SQLite is the simpler default here.
 
 ## Other free always-on options
 

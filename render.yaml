@@ -4,15 +4,14 @@
 # After it deploys, fill the `sync: false` secret TELEGRAM_BOT_TOKEN in the UI.
 #
 # This runs the REST API + Telegram bot + Mantle monitor as ONE free web service
-# (backend.run_all). Render free web services sleep after ~15 min idle, so set up
-# a free uptime pinger (UptimeRobot or cron-job.org) to GET <your-url>/health
-# every 10 minutes. See docs/DEPLOY_RENDER.md for the full walkthrough.
-
-databases:
-  - name: mantle-db
-    plan: free
-    databaseName: mantle_alpha
-    user: mantle
+# (backend.run_all) using a self-contained SQLite database, so there is no
+# separate database to provision. Render free web services sleep after ~15 min
+# idle, so set up a free uptime pinger (UptimeRobot or cron-job.org) to GET
+# <your-url>/health every 10 minutes. See docs/DEPLOY_RENDER.md for details.
+#
+# Note: the free instance disk is ephemeral, so SQLite data resets on redeploy.
+# That is fine for a demo. For persistence, attach a managed Postgres and set
+# DATABASE_URL to its connection string.
 
 services:
   - type: web
@@ -32,6 +31,4 @@ services:
       - key: MANTLE_RPC_URL
         value: https://rpc.mantle.xyz
       - key: DATABASE_URL
-        fromDatabase:
-          name: mantle-db
-          property: connectionString
+        value: sqlite+aiosqlite:///./dev.db
