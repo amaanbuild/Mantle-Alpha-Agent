@@ -248,8 +248,8 @@ and message formatting.
 
 > Tip: a Telegram bot in polling mode needs no public URL, so hosting is simple.
 
-- [docs/DEPLOY_RAILWAY.md](docs/DEPLOY_RAILWAY.md): step-by-step Railway deploy (recommended).
-- [render.yaml](render.yaml): one-click Render Blueprint.
+- [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md): free deploy on Render, no credit card (recommended for hackathons). Runs the API, bot, and monitor as one service via [backend/run_all.py](backend/run_all.py).
+- [docs/DEPLOY_RAILWAY.md](docs/DEPLOY_RAILWAY.md): step-by-step Railway deploy (needs trial credit).
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): general production guidance (webhooks, scaling, migrations).
 - [docker-compose.yml](docker-compose.yml): full local or self-hosted stack.
 
