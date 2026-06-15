@@ -22,6 +22,11 @@ services:
     startCommand: uvicorn backend.run_all:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
+      # Pin Python to 3.12 so every dependency installs from a prebuilt wheel.
+      # (On 3.13/3.14, pydantic-core has no wheel and tries to compile from Rust,
+      # which fails on Render's read-only build filesystem.)
+      - key: PYTHON_VERSION
+        value: "3.12.8"
       - key: ENVIRONMENT
         value: production
       - key: TELEGRAM_BOT_TOKEN
