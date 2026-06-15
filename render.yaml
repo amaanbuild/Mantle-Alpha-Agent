@@ -1,0 +1,95 @@
+# Render Blueprint: one-click multi-service deploy.
+# Render dashboard: New, then Blueprint, then connect this repo, then Apply.
+# Fill the `sync: false` secrets (TELEGRAM_BOT_TOKEN, OPENAI_API_KEY) in the UI.
+#
+# NOTE: Render background workers are billed and free web services spin down,
+# so for an always-on hackathon bot, Railway (docs/DEPLOY_RAILWAY.md) is cheaper.
+
+databases:
+  - name: mantle-db
+    plan: free
+    databaseName: mantle_alpha
+    user: mantle
+
+services:
+  # ---- Redis (cache / rate-limit / monitor cursor) ----
+  - type: keyvalue
+    name: mantle-redis
+    plan: free
+    ipAllowList: []
+
+  # ---- Telegram bot (inbound commands + natural language) ----
+  - type: worker
+    name: mantle-bot
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: alembic upgrade head
+    startCommand: python -m backend.bot.telegram_bot
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MANTLE_RPC_URL
+        value: https://rpc.mantle.xyz
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mantle-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: mantle-redis
+          type: keyvalue
+          property: connectionString
+
+  # ---- Blockchain monitor (whale alerts) ----
+  - type: worker
+    name: mantle-monitor
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m backend.worker
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MANTLE_RPC_URL
+        value: https://rpc.mantle.xyz
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mantle-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: mantle-redis
+          type: keyvalue
+          property: connectionString
+
+  # ---- REST API + OpenAPI docs (public) ----
+  - type: web
+    name: mantle-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: MANTLE_RPC_URL
+        value: https://rpc.mantle.xyz
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mantle-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: mantle-redis
+          type: keyvalue
+          property: connectionString

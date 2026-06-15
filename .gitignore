@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Test / coverage / lint caches
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets / local config
+.env
+*.env.local
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Node (contracts)
+contracts/node_modules/
+contracts/artifacts/
+contracts/cache/
+contracts/deployments/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,43 @@
+[project]
+name = "mantle-alpha-agent"
+version = "1.0.0"
+description = "AI-powered Telegram agent that monitors Mantle blockchain activity and delivers real-time whale alpha signals."
+requires-python = ">=3.12"
+readme = "README.md"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["backend"]
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: isort, B: bugbear, UP: pyupgrade,
+# C4: comprehensions, ASYNC: async best practices
+select = ["E", "W", "F", "I", "B", "UP", "C4", "ASYNC"]
+ignore = [
+    "E501",   # line length handled by black/formatter
+    "UP042",  # `class X(str, Enum)` is intentional (clean SQLAlchemy string mapping)
+    "B008",   # Depends() in defaults is the standard FastAPI dependency-injection idiom
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra -q --cov=backend --cov-report=term-missing"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["backend"]
+omit = ["backend/tasks/celery_app.py", "*/migrations/*"]

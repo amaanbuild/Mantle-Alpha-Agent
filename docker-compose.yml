@@ -1,0 +1,152 @@
+# ===========================================================================
+# Mantle Alpha Agent - full local/production stack
+#
+# Services:
+#   db        - PostgreSQL 16
+#   redis     - Redis 7 (cache, rate-limit, celery broker, monitor cursor)
+#   migrate   - one-shot Alembic migrations (runs, then exits)
+#   api       - FastAPI REST + OpenAPI docs
+#   bot       - Telegram bot (polling/webhook, inbound commands & NL)
+#   worker    - real-time blockchain monitor -> alert engine -> Telegram
+#   celery    - Celery worker for periodic/background tasks
+#   beat      - Celery beat scheduler
+#
+# Usage:  cp .env.example .env && docker compose up --build
+# ===========================================================================
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mantle
+      POSTGRES_PASSWORD: mantle
+      POSTGRES_DB: mantle_alpha
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mantle -d mantle_alpha"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mantle:mantle@db:5432/mantle_alpha
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mantle:mantle@db:5432/mantle_alpha
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  bot:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["python", "-m", "backend.bot.telegram_bot"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mantle:mantle@db:5432/mantle_alpha
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["python", "-m", "backend.worker"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mantle:mantle@db:5432/mantle_alpha
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  celery:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["celery", "-A", "backend.tasks.celery_app:celery_app", "worker", "-l", "info"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mantle:mantle@db:5432/mantle_alpha
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  beat:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["celery", "-A", "backend.tasks.celery_app:celery_app", "beat", "-l", "info"]
+    env_file: .env
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
