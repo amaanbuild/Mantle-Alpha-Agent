@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from sqlalchemy import text
 
 from backend import __version__
@@ -27,6 +27,16 @@ async def health() -> HealthResponse:
         database=db_ok,
         rpc=rpc_ok,
     )
+
+
+@router.head("/health", include_in_schema=False)
+async def health_head() -> Response:
+    """Lightweight liveness for uptime pingers that send HEAD (e.g. UptimeRobot).
+
+    Returns 200 immediately without the DB/RPC checks, so a keep-alive ping is
+    cheap and never reports the service as down on method mismatch.
+    """
+    return Response(status_code=200)
 
 
 async def _check_db() -> bool:
